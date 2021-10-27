@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,6 +55,8 @@ type WorkerSelector interface {
 type scheduler struct {
 	workersLk sync.RWMutex
 	workers   map[WorkerID]*workerHandle
+
+	expectWorkers map[abi.SectorID]string
 
 	schedule       chan *workerRequest
 	windowRequests chan *schedWindowRequest
@@ -152,6 +155,8 @@ func newScheduler() *scheduler {
 		workerDisable:  make(chan workerDisableReq),
 
 		schedQueue: &requestQueue{},
+
+		expectWorkers: map[abi.SectorID]string{},
 
 		workTracker: &workTracker{
 			done:    map[storiface.CallID]struct{}{},
@@ -392,6 +397,20 @@ func (sh *scheduler) trySched() {
 					continue
 				}
 
+				// modified for Lock P1 & P2 Same Worker
+				switch task.taskType {
+				case sealtasks.TTPreCommit2:
+					expectWorkerName, ok := sh.expectWorkers[task.sector.ID]
+					log.Infof("expectWorkerName:%s,ok:%t,worker.info.Hostname:%s", expectWorkerName, ok, worker.info.Hostname)
+					infoHostnameArray := strings.Split(worker.info.Hostname, "-")
+					if ok && len(infoHostnameArray) >= 2 && infoHostnameArray[1] != expectWorkerName {
+						log.Info("enter continut")
+						continue
+					}
+					log.Debugf("WhaleFarm Using worker: [%s, expected:%v] for %v of sector %v ", expectWorkerName, ok, task.taskType, task.sector.ID.Number)
+				}
+				// end this patch
+
 				// TODO: allow bigger windows
 				if !windows[wnd].allocated.canHandleRequest(needRes, windowRequest.worker, "schedAcceptable", worker.info) {
 					continue
@@ -478,6 +497,21 @@ func (sh *scheduler) trySched() {
 			//  without additional network roundtrips (O(n^2) could be avoided by turning acceptableWindows.[] into heaps))
 
 			selectedWindow = wnd
+			// modified For Lock P1 P2 Same Worker
+			if task.taskType == sealtasks.TTPreCommit1 {
+				worker, ok := sh.workers[wid]
+				if ok {
+					// strings.Split("worker150-p1", "-")[0])
+					// sh.expectWorkers[task.sector.ID] = worker.info.Hostname
+					expectWorkerName := strings.Split(worker.info.Hostname, "-")[1]
+					log.Infof("expectWorkerName: %s", expectWorkerName)
+					sh.expectWorkers[task.sector.ID] = expectWorkerName
+					log.Debugf("WhaleFarm Add worker to expects: [%s] for %v of sector %v ", expectWorkerName, task.taskType, task.sector.ID.Number)
+				}
+			} else if task.taskType == sealtasks.TTCommit1 {
+				delete(sh.expectWorkers, task.sector.ID)
+			}
+			// end this patch
 			break
 		}
 

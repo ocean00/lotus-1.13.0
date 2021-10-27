@@ -121,9 +121,17 @@ var runCmd = &cli.Command{
 	Flags: []cli.Flag{
 		//add by roger
 		&cli.StringFlag{
-			Name:  "workername",
-			Usage: "worker name will display on jobs list",
-			Value: "",
+			Name:  "worker-name",
+			Usage: "worker name, such as Tasks[P1,P2,C2]-YourWorkerIP",
+		},
+		&cli.StringFlag{
+			Name:  "memory-limit",
+			Usage: "memory limit for worker, default 900 means 900 GiB For 12 * P1 32GiB Sectors ",
+			Value: "900",
+		},
+		&cli.StringFlag{
+			Name:  "cpu-limit",
+			Usage: "cpu limit means tasks limit, because cpu will use sdr and L3 for multi cores in fact, you can define 13 in P1",
 		},
 		&cli.StringFlag{
 			Name:  "listen",
@@ -192,8 +200,14 @@ var runCmd = &cli.Command{
 	Action: func(cctx *cli.Context) error {
 		log.Info("Starting lotus worker")
 		// add by roger
-		if cctx.String("workername") != "" {
-			os.Setenv("WORKER_NAME", cctx.String("workername"))
+		if cctx.String("worker-name") != "" {
+			os.Setenv("WORKER_NAME", cctx.String("worker-name"))
+		}
+		if cctx.String("memory-limit") != "" {
+			os.Setenv("MEMORY_LIMIT", cctx.String("memory-limit"))
+		}
+		if cctx.String("cpu-limit") != "" {
+			os.Setenv("CPU_LIMIT", cctx.String("cpu-limit"))
 		}
 		if !cctx.Bool("enable-gpu-proving") {
 			if err := os.Setenv("BELLMAN_NO_GPU", "true"); err != nil {
