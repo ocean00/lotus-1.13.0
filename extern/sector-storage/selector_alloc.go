@@ -55,6 +55,13 @@ func (s *allocSelector) Ok(ctx context.Context, task sealtasks.TaskType, spt abi
 		return false, xerrors.Errorf("finding best alloc storage: %w", err)
 	}
 
+	//add by roger
+	if task == sealtasks.TTAddPiece {
+		if isAddPice := s.index.MaybeAddPice(ctx, s.alloc, ssize, s.ptype); !isAddPice {
+			return false, xerrors.Errorf("disk space issue")
+		}
+	}
+
 	for _, info := range best {
 		if _, ok := have[info.ID]; ok {
 			return true, nil

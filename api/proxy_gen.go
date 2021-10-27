@@ -697,6 +697,8 @@ type StorageMinerStruct struct {
 
 		PiecesListPieces func(p0 context.Context) ([]cid.Cid, error) `perm:"read"`
 
+		MaybeAddPice func(p0 context.Context, p1 storiface.SectorFileType, p2 abi.SectorSize, p3 storiface.PathType) bool `perm:"admin"`
+
 		PledgeSector func(p0 context.Context) (abi.SectorID, error) `perm:"write"`
 
 		ReturnAddPiece func(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error `perm:"admin"`
@@ -3732,6 +3734,11 @@ func (s *StorageMinerStruct) DealsConsiderOnlineRetrievalDeals(p0 context.Contex
 
 func (s *StorageMinerStub) DealsConsiderOnlineRetrievalDeals(p0 context.Context) (bool, error) {
 	return false, ErrNotSupported
+}
+
+//add by roger
+func (s *StorageMinerStruct) MaybeAddPice(p0 context.Context, p1 storiface.SectorFileType, p2 abi.SectorSize, p3 storiface.PathType) bool {
+	return s.Internal.MaybeAddPice(p0, p1, p2, p3)
 }
 
 func (s *StorageMinerStruct) DealsConsiderOnlineStorageDeals(p0 context.Context) (bool, error) {
