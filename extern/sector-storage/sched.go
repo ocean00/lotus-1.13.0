@@ -403,7 +403,7 @@ func (sh *scheduler) trySched() {
 					expectWorkerName, ok := sh.expectWorkers[task.sector.ID]
 					log.Infof("expectWorkerName:%s,ok:%t,worker.info.Hostname:%s", expectWorkerName, ok, worker.info.Hostname)
 					infoHostnameArray := strings.Split(worker.info.Hostname, "-")
-					if ok && len(infoHostnameArray) >= 2 && infoHostnameArray[1] != expectWorkerName && infoHostnameArray[1] != "miner" && infoHostnameArray[1] != "worker1" {
+					if ok && len(infoHostnameArray) >= 2 && infoHostnameArray[1] != expectWorkerName && infoHostnameArray[1] != "miner" && infoHostnameArray[1] != "worker2" {
 						log.Info("enter continut")
 						continue
 					}
