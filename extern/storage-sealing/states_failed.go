@@ -63,7 +63,8 @@ func (m *Sealing) handleSealPrecommit2Failed(ctx statemachine.Context, sector Se
 		return err
 	}
 
-	if sector.PreCommit2Fails > 3 {
+	// 按照默然代码 取消 失败10次就从PC2到PC1
+	if sector.PreCommit2Fails > 10 {
 		return ctx.Send(SectorRetrySealPreCommit1{})
 	}
 
@@ -174,9 +175,10 @@ func (m *Sealing) handleComputeProofFailed(ctx statemachine.Context, sector Sect
 		return err
 	}
 
-	if sector.InvalidProofs > 1 {
-		return ctx.Send(SectorSealPreCommit1Failed{xerrors.Errorf("consecutive compute fails")})
-	}
+	// 按照默然代码 取消 生成不正确proof
+	// if sector.InvalidProofs > 1 {
+	// 	return ctx.Send(SectorSealPreCommit1Failed{xerrors.Errorf("consecutive compute fails")})
+	// }
 
 	return ctx.Send(SectorRetryComputeProof{})
 }
